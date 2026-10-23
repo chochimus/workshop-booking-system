@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import { write } from 'node:fs';
 
 let manager;
 const filePath = path.join(import.meta.dirname, 'dataStorage.json');
@@ -20,12 +19,7 @@ class SessionManager {
     return [...this.sessions];
   }
   getBookings(sessionId) {
-    if (!this.isValidId(sessionId)) {
-      const err = new Error('Invalid id');
-      err.status = 400;
-      throw err;
-    }
-
+    this.getSession(sessionId);
     return this.bookingsForSession(Number(sessionId));
   }
   bookingsForSession(sessionId) {
@@ -79,15 +73,15 @@ class SessionManager {
       throw err;
     }
 
-    if (this.sessionAtCapacity(sessionIndex)) {
-      const err = new Error('Session fully booked');
-      err.status = 409;
-      throw err;
-    }
-
     if (!this.isValidBooking(data)) {
       const err = new Error('Invalid booking data');
       err.status = 422;
+      throw err;
+    }
+
+    if (this.sessionAtCapacity(sessionIndex)) {
+      const err = new Error('Session fully booked');
+      err.status = 409;
       throw err;
     }
 
@@ -160,7 +154,7 @@ class SessionManager {
       throw err;
     }
 
-    if (this.bookingsForSession(Number(id)) > 0) {
+    if (this.bookingsForSession(Number(id)).length > 0) {
       const err = new Error('Cannot delete session with existing bookings.');
       err.status = 409;
       throw err;
@@ -177,7 +171,13 @@ class SessionManager {
       throw err;
     }
 
-    
+    const booking = this.bookings.find(booking => booking.id === Number(id));
+
+    if (!booking) {
+      const err = new Error('Booking not found');
+      err.status = 404;
+      throw err;
+    }
 
     const updatedBookings = this.bookings.filter(booking => booking.id !== Number(id));
     await writeFile(filePath, JSON.stringify({sessions: this.sessions, bookings: updatedBookings}));
@@ -251,14 +251,13 @@ class SessionManager {
     return true;
   }
   isValidDateTime(value) {
-  if (typeof value !== 'string') return false;
+    if (typeof value !== 'string') return false;
 
-  const date = new Date(value);
+    const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return false;
+    if (Number.isNaN(date.getTime())) return false;
 
-
-  return date.toISOString() === value;
+    return date.toISOString() === value;
   }
   
   hasValidSessionTimes(session) {
