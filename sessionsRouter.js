@@ -19,3 +19,5 @@ sessionsRouter
   .get(handleGetSession)
   .patch(handlePatchSession)
   .delete(handleDeleteSession);
+
+export default sessionsRouter;
