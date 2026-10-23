@@ -6,6 +6,10 @@ import {
   handlePatchSession,
   handleDeleteSession
 } from './sessionsHandler.js';
+import {
+  handlePostBooking,
+  handleGetBookings
+} from './bookingsHandler.js';
 
 const sessionsRouter = express.Router();
 
@@ -19,5 +23,13 @@ sessionsRouter
   .get(handleGetSession)
   .patch(handlePatchSession)
   .delete(handleDeleteSession);
+
+const sessionBookingRouter = express.Router({mergeParams: true});
+sessionBookingRouter
+  .route('/')
+  .post(handlePostBooking)
+  .get(handleGetBookings)
+
+sessionsRouter.use('/:id/bookings', sessionBookingRouter);
 
 export default sessionsRouter;
