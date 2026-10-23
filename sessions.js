@@ -21,7 +21,7 @@ class SessionManager {
       throw err;
     }
 
-    const session = this.sessions.find(session => session.id === id);
+    const session = this.sessions.find(session => session.id === Number(id));
     
     if (!session) {
       const err = new Error('No matching session');
@@ -47,11 +47,56 @@ class SessionManager {
     this.sessions = updatedSessions;
     return session;
   }
+  async updateSession(id, data) {
+    if (!this.isValidId(id)) {
+      const err = new Error('Invalid id');
+      err.status = 400;
+      throw err;
+    }
+
+    const existingSessionIndex = this.sessions.findIndex(session => session.id === Number(id));
+
+    if (existingSessionIndex === -1) {
+      const err = new Error('No matching session');
+      err.status = 404;
+      throw err;
+    }
+
+    if (!this.isValidSessionUpdate(data)) {
+      const err = new Error('Invalid session data');
+      err.status = 422;
+      throw err;
+    }
+
+    const updatedSession = {
+      ...this.sessions[existingSessionIndex],
+      ...data
+    }
+
+    if (!this.hasValidSessionTimes(updatedSession)) {
+      const err = new Error('Invalid session data');
+      err.status = 422;
+      throw err;
+    }
+
+    const updatedSessions = [...this.sessions];
+
+    updatedSessions[existingSessionIndex] = updatedSession;
+    await writeFile(filePath, JSON.stringify({sessions: updatedSessions}))
+    this.sessions = updatedSessions;
+    return updatedSession;
+  }
   isValidId(id) {
     return /^\d+$/.test(id) && Number(id) > 0;
   }
   isValidObject(data) {
     return (data !== null && typeof data === 'object' && !Array.isArray(data));
+  }
+  isValidSessionUpdate(data) {
+    return (this.isValidObject(data) &&
+      Object.keys(data).length > 0 &&
+      this.isValidSession(data)
+    );
   }
   isValidSessionPost(data) {
     return (this.isValidObject(data) && 
