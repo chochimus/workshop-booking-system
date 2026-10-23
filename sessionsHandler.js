@@ -3,7 +3,7 @@ import { manager } from './sessions.js';
 export function handleGetSessions(req, res, next) {
   try {
     const sessions = manager.getSessions();
-    res.status(200).send(JSON.stringify(sessions));
+    res.status(200).json(sessions);
   } catch (error) {
     next(error);
   }
@@ -29,20 +29,22 @@ export function handleGetSession(req, res, next) {
   }
 }
 
-export function handlePatchSession(req, res, next) {
+export async function handlePatchSession(req, res, next) {
   try {
     const id = req.params.id;
     const data = req.body;
-    const session = manager.updateSession(id, data);
+    const session = await manager.updateSession(id, data);
     res.status(200).json(session);
   } catch (error) {
     next(error);
   }
 }
 
-export function handleDeleteSession(req, res, next) {
+export async function handleDeleteSession(req, res, next) {
   try {
-
+    const id = req.params.id;
+    await manager.deleteSession(id);
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

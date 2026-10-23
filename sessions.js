@@ -86,6 +86,25 @@ class SessionManager {
     this.sessions = updatedSessions;
     return updatedSession;
   }
+  async deleteSession(id) {
+    if (!this.isValidId(id)) {
+      const err = new Error('Invalid id');
+      err.status = 400;
+      throw err;
+    }
+
+    const session = this.sessions.find(session => session.id === Number(id));
+
+    if (!session) {
+      const err = new Error('No matching session');
+      err.status = 404;
+      throw err;
+    }
+
+    const updatedSessions = this.sessions.filter(session => session.id !== Number(id));
+    await writeFile(filePath, JSON.stringify({sessions: updatedSessions}));
+    this.sessions = updatedSessions;
+  }
   isValidId(id) {
     return /^\d+$/.test(id) && Number(id) > 0;
   }
@@ -158,7 +177,7 @@ async function initializeData() {
   } catch (error) {
     if (error.code === 'ENOENT') {
       manager = new SessionManager();
-      await writeFile(filePath, JSON.stringify(manager));
+      await writeFile(filePath, JSON.stringify({sessions: []}));
     } else {
       throw error;
     }

@@ -9,6 +9,12 @@ app.use(express.json());
 
 app.use('/api/sessions', sessionsRouter);
 
+app.use((err, req, res, next) => {
+  if (err.status === 404) {
+    res.json({error: err.message});
+  }
+})
+
 app.listen(port, () => {
   console.log(`Listening on port: ${port}`);
 });
